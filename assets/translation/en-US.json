@@ -1,0 +1,224 @@
+{
+  "generic_success": "success",
+  "generic_error": "Error",
+
+  "command_8ball": "8ball",
+  "command_8ball_desc": "Query Tyche(lion) for the answers to all your questions.",
+  "command_8ball_query": "query",
+  "command_8ball_query_desc": "The query for Tyche(lion) to answer.",
+
+  "command_avatar": "avatar",
+  "command_avatar_ctxmenu": "Get Avatar",
+  "command_avatar_desc": "Get a user's avatar.",
+  "command_avatar_user": "user",
+  "command_avatar_user_desc": "The user to get the avatar of.",
+  "command_avatar_crop": "crop",
+  "command_avatar_crop_desc": "If the avatar should be cropped to a circle.",
+
+  "command_calc": "calc",
+  "command_calc_desc": "Solve an equation.",
+  "command_calc_equ": "equation",
+  "command_calc_equ_desc": "The equation to solve [e.g. \"2+2\"]",
+
+  "command_caption": "caption",
+  "command_caption_desc": "Add a caption above an image.",
+  "command_caption_caption": "caption",
+  "command_caption_caption_desc": "The text of the caption.",
+  "command_caption_image": "image",
+  "command_caption_image_desc": "The image to add the caption to.",
+  "command_caption_typ": "type",
+  "command_caption_choice_default": "Default",
+
+  "caption_not_image": "The file provided isn't an image!",
+
+  "command_choose": "choose",
+  "command_choose_desc": "Chooses one or more options.",
+  "command_choose_options": "options",
+  "command_choose_options_desc": "A list of options, split by semicolons.",
+  "command_choose_count": "count",
+  "command_choose_count_desc": "The amount of options to pick.",
+  "command_choose_unique": "unique",
+  "command_choose_unique_desc": "If this is false, options can be picked multiple times.",
+
+  "choose_lets_pick": "let's pick... %1%.",
+  "choose_too_many_choices": "Asked for too many choices! (Try setting unique to false if you want to pick multiple options)",
+  "choose_zero_choices": "Asked for zero or negative choices!",
+
+  "command_define": "define",
+  "command_define_desc": "Define a word. Uses Wiktionary on the backend.",
+
+  "command_distance": "distance",
+  "command_distance_desc": "How far are you from the sun?",
+
+  "command_echo": "echo",
+  "command_echo_desc": "Echoes your input back out, with a notice that you posted it.",
+  "command_echo_message": "message",
+  "command_echo_message_desc": "The message to echo.",
+
+  "command_game": "game",
+  "command_game_tictactoe": "tictactoe",
+  "command_game_tictactoe_desc": "Starts a game of Tic-Tac-Toe.",
+  "command_game_tictactoe_size": "size",
+  "command_game_tictactoe_size_desc": "The size of the board. Ranges from 3 to 5.",
+  "command_game_tictactoe_row": "row",
+  "command_game_tictactoe_row_desc": "The amount of letters in a row you need to win. Defaults to the board size.",
+  "command_game_tictactoe_misere": "misere",
+  "command_game_tictactoe_misere_desc": "Inverts the winner and loser - if this is enabled, you want to **lose**!",
+
+  "tictactoe_row_oversize": "Row length has to be less than or equal to the board size!",
+
+  "command_info": "info",
+  "command_info_desc": "Shows info about the bot, and credits contributors.",
+
+  "command_note": "note",
+
+  "command_note_create": "create",
+  "command_note_create_desc": "Create a new note.",
+
+  "command_note_edit": "edit",
+  "command_note_edit_desc": "Edit an existing note.",
+
+  "command_note_read": "read",
+  "command_note_read_desc": "Read a note.",
+  "command_note_read_page": "page",
+  "command_note_read_page_desc": "The note to read.",
+
+  "command_note_lock": "lock",
+  "command_note_lock_desc": "Lock a note, making it uneditable.",
+  "command_note_lock_page": "page",
+  "command_note_lock_page_desc": "The note to lock.",
+
+  "command_note_delete": "delete",
+  "command_note_delete_desc": "Delete a note.",
+  "command_note_delete_page": "page",
+  "command_note_delete_page_desc": "The note to delete.",
+
+  "command_note_unlock": "unlock",
+  "command_note_unlock_desc": "Unlocks a note.",
+  "command_note_unlock_page": "page",
+  "command_note_unlock_page_desc": "The note to unlock.",
+
+  "notes_creation_title": "note creation/editing",
+
+  "notes_title_label": "Write the note's title below.",
+  "notes_title_placeholder": "The note's title.",
+
+  "notes_content_label": "Write the note itself below.",
+  "notes_content_placeholder": "The note's contents.",
+
+  "notes_locked_message": "You've locked this note!",
+  "notes_edited_message": "Note %1% edited! New contents:\n```ansi\n%2%```",
+
+  "command_rngsim": "rngsim",
+  "command_rngsim_desc": "basically just gambling lol",
+
+  "command_roll": "roll",
+  "command_roll_desc": "Rolls one or more dice.",
+  "command_roll_rolls": "rolls",
+  "command_roll_rolls_desc": "The roll string to roll.",
+
+  "roll_result_too_long": "Your roll was too long.",
+
+  "command_roll_help": "roll_help",
+  "command_roll_help_desc": "Help with /roll's syntax.",
+
+  "command_rst": "rst",
+
+  "command_rst_add": "add",
+  "command_rst_add_desc": "Add a string to the database, after it is moderated.",
+  "command_rst_add_text": "text",
+  "command_rst_add_text_desc": "The text to add.",
+
+  "command_rst_get": "get",
+  "command_rst_get_desc": "Get a random quote.",
+
+  "rst_random_text_title": "random text",
+  "rst_text_added_title": "text added",
+  "rst_text_added_content": "Your text has been added to the moderation queue.",
+
+  "command_username": "username",
+  "command_username_desc": "Generate a list of random usernames.",
+  "command_username_count": "count",
+  "command_username_count_desc": "The amount of usernames to generate.",
+  
+  "username_generated": "Username generated!",
+  "username_generated_plural": "Usernames generated!",
+
+  "command_usersettings": "usersettings",
+
+  "command_usersettings_set": "set",
+  "command_usersettings_set_desc": "Changes a setting to a new value.",
+  "command_usersettings_set_setting": "setting",
+  "command_usersettings_set_setting_desc": "The setting to set.",
+  "command_usersettings_set_value": "value",
+  "command_usersettings_set_value_desc": "The new value of the setting.",
+
+  "usersettings_boolean_check_fail": "The setting you're trying to set is a boolean, so it must be true or false!",
+  "usersettings_type_fail": "The option can't find the correct typing. Please report this bug.",
+  "usersettings_success": "Setting set successfully!",
+  "usersettings_success_details": "%1% set to %2%.",
+
+  "command_usersettings_get": "get",
+  "command_usersettings_get_desc": "Gets the current value of a setting.",
+  "command_usersettings_get_setting": "setting",
+  "command_usersettings_get_setting_desc": "The setting to get.",
+
+  "usersettings_value_details": "%1% is set to %2%.",
+  "usersettings_value": "%1%'s value",
+
+  "command_usersettings_clear": "clear",
+  "command_usersettings_clear_desc": "Reset your user settings.",
+
+  "usersettings_confirm_clear": "To confirm you want to clear settings, please run this command again.",
+  "usersettings_confirm_clear_title": "confirm settings clear",
+  "usersettings_cleared": "Your settings have been cleared.",
+  "usersettings_cleared_title": "settings cleared",
+
+  "command_wiki": "wiki",
+
+  "command_wiki_create": "create",
+  "command_wiki_create_desc": "Create a new page.",
+
+  "command_wiki_edit": "edit",
+  "command_wiki_edit_desc": "Edit an existing page.",
+
+  "command_wiki_read": "read",
+  "command_wiki_read_desc": "Read a page.",
+  "command_wiki_read_page": "page",
+  "command_wiki_read_page_desc": "The page to read.",
+
+  "command_wiki_lock": "lock",
+  "command_wiki_lock_desc": "Lock a page, making it uneditable. You must have the Manage Messages permission to do so.",
+  "command_wiki_lock_page": "page",
+  "command_wiki_lock_page_desc": "The page to lock.",
+
+  "command_wiki_delete": "delete",
+  "command_wiki_delete_desc": "Delete a page. You must have the Manage Messages permission to do so.",
+  "command_wiki_delete_page": "page",
+  "command_wiki_delete_page_desc": "The page to delete.",
+
+  "command_wiki_unlock": "unlock",
+  "command_wiki_unlock_desc": "Unlocks a page. You must have the Manage Messages permission to do so.",
+  "command_wiki_unlock_page": "page",
+  "command_wiki_unlock_page_desc": "The page to unlock.",
+
+  "wiki_creation_title": "wiki page creation/editing",
+
+  "wiki_title_label": "Write the page's title below.",
+  "wiki_title_placeholder": "The page's title.",
+
+  "wiki_content_label": "Write the page itself below.",
+  "wiki_content_placeholder": "The page's contents.",
+
+  "wiki_locked_message": "This page is locked!",
+  "wiki_edited_message": "(by %3%) Page %1% edited! New contents:\n```ansi\n%2%```",
+
+  "wiki_note_not_found": "Page not found",
+
+  "command_wikipedia": "wikipedia",
+  "command_wikipedia_desc": "Get the introduction to an English Wikipedia article, as well as a link.",
+  "command_wikipedia_query": "query",
+  "command_wikipedia_query_desc": "The page to search for.",
+
+  "wikipedia_message": "## [Link to page](%1%)\n\n%2%"
+}

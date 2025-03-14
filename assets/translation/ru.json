@@ -1,0 +1,224 @@
+{
+    "generic_success": "успех",
+    "generic_error": "Опаньки!",
+  
+    "command_8ball": "шар-8",
+    "command_8ball_desc": "Задай Фортуне любой из своих вопросов.",
+    "command_8ball_query": "запрос",
+    "command_8ball_query_desc": "Запрос на ответ фортуны.",
+  
+    "command_avatar": "аватар",
+    "command_avatar_ctxmenu": "Получить Аватар",
+    "command_avatar_desc": "Получает изображение профиля пользователя.",
+    "command_avatar_user": "пользователь",
+    "command_avatar_user_desc": "Пользователь изображение профиля которого надо получить.",
+    "command_avatar_crop": "обрезать",
+    "command_avatar_crop_desc": "Обрезать изображение профиля пользователя в круг?",
+  
+    "command_calc": "счёт",
+    "command_calc_desc": "Решить задачу.",
+    "command_calc_equ": "задача",
+    "command_calc_equ_desc": "Задача для решения [н.п. \"2+2\"]",
+  
+    "command_caption": "подпись",
+    "command_caption_desc": "Добавляет подпись над картинкой.",
+    "command_caption_caption": "подпись",
+    "command_caption_caption_desc": "Текст подписи.",
+    "command_caption_image": "картинка",
+    "command_caption_image_desc": "Картинка, над которой надо поставить подпись.",
+    "command_caption_typ": "тип",
+    "command_caption_choice_default": "По умолчанию",
+  
+    "caption_not_image": "Данный файл не является изображением!",
+  
+    "command_choose": "выбор",
+    "command_choose_desc": "Выбирает один из заданных вариантов.",
+    "command_choose_options": "варианты",
+    "command_choose_options_desc": "Список вариантов, разделенных запятыми.",
+    "command_choose_count": "количество",
+    "command_choose_count_desc": "Количетсво вариантов на выбор.",
+    "command_choose_unique": "уникальность",
+    "command_choose_unique_desc": "Если ложь, варианты смогут выбираться несколько раз.",
+  
+    "choose_lets_pick": "Выбираю... %1%.",
+    "choose_too_many_choices": "Заданно слишком много вариантов! (Для выбора нескольких вариантов, нужно поставить уникальность на ложь.)",
+    "choose_zero_choices": "Запрошенно 0 или менее вариантов на выбор!",
+  
+    "command_define": "словарь",
+    "command_define_desc": "Определяет значение слова. Использует Викисловарь для получения информации.",
+  
+    "command_distance": "дистанция",
+    "command_distance_desc": "Выдаёт расстояние до солнца.",
+  
+    "command_echo": "эхо",
+    "command_echo_desc": "Отражает обратно заданное сообщение вместе с записью, прикрепленной к нему.",
+    "command_echo_message": "сообщение",
+    "command_echo_message_desc": "Сообщение для отражения.",
+  
+    "command_game": "игра",
+    "command_game_tictactoe": "крестики-нолики",
+    "command_game_tictactoe_desc": "Начинает игру в крестики-нолики.",
+    "command_game_tictactoe_size": "размер",
+    "command_game_tictactoe_size_desc": "Размер игральной доски. Доступны значения от 3 до 5.",
+    "command_game_tictactoe_row": "ряд",
+    "command_game_tictactoe_row_desc": "Кол-во фигур в одном ряду необходимых для выйгрыша(по умолчанию задаётся размер доски).",
+    "command_game_tictactoe_misere": "поддавки",
+    "command_game_tictactoe_misere_desc": "Меняет местами победившего и проигравшего игроков. Если включено, ваша задача - **проиграть**!",
+  
+    "tictactoe_row_oversize": "Длина ряда должна быть меньше или равна размеру доски!",
+  
+    "command_info": "справка",
+    "command_info_desc": "Показывает всю информацию о боте и упоминания помощников проекта.",
+  
+    "command_note": "записка",
+  
+    "command_note_create": "записать",
+    "command_note_create_desc": "Написать новую записку.",
+  
+    "command_note_edit": "править",
+    "command_note_edit_desc": "Поправить существующую записку.",
+  
+    "command_note_read": "читать",
+    "command_note_read_desc": "Выдает записку для чтения.",
+    "command_note_read_page": "лист",
+    "command_note_read_page_desc": "Записка к чтению.",
+  
+    "command_note_lock": "закрыть",
+    "command_note_lock_desc": "Запрещает изменять записку.",
+    "command_note_lock_page": "лист",
+    "command_note_lock_page_desc": "Записка к закрытию.",
+  
+    "command_note_delete": "сжечь",
+    "command_note_delete_desc": "Удалить записку.",
+    "command_note_delete_page": "лист",
+    "command_note_delete_page_desc": "Записка к удалению.",
+  
+    "command_note_unlock": "открыть",
+    "command_note_unlock_desc": "Разрешает изменять записку.",
+    "command_note_unlock_page": "лист",
+    "command_note_unlock_page_desc": "Записка для открытия.",
+  
+    "notes_creation_title": "создание/изменение записки",
+  
+    "notes_title_label": "Напишите название записки ниже.",
+    "notes_title_placeholder": "Название записки.",
+  
+    "notes_content_label": "Напишите содержание записки ниже.",
+    "notes_content_placeholder": "Содержание записки.",
+  
+    "notes_locked_message": "Записка закреплена!",
+    "notes_edited_message": "Записка %1% изменена! Новое содержание:\n```ansi\n%2%```",
+  
+    "command_rngsim": "рандом",
+    "command_rngsim_desc": "1XHELION",
+  
+    "command_roll": "кость",
+    "command_roll_desc": "Кидает одну или несколько игральных костей.",
+    "command_roll_rolls": "кол-во",
+    "command_roll_rolls_desc": "Сколько костей кинуть?.",
+  
+    "roll_result_too_long": "Я не могу кинуть столько костей.",
+  
+    "command_roll_help": "кость-инфо",
+    "command_roll_help_desc": "Помогает с синтаксисом команды /кость.",
+  
+    "command_rst": "рст",
+  
+    "command_rst_add": "добавить",
+    "command_rst_add_desc": "Добовляет строку в базу данных после прохода модерации.",
+    "command_rst_add_text": "текст",
+    "command_rst_add_text_desc": "Текст для добавления.",
+  
+    "command_rst_get": "взять",
+    "command_rst_get_desc": "Выводит случайную цитату.",
+  
+    "rst_random_text_title": "случайный текст",
+    "rst_text_added_title": "текст добавлен",
+    "rst_text_added_content": "Текст был направлен в очередь модерации..",
+  
+    "command_username": "ник",
+    "command_username_desc": "Выдает список случайных никнеймов.",
+    "command_username_count": "кол-во",
+    "command_username_count_desc": "Количество никнеймов для генерации.",
+    
+    "username_generated": "Никнейм сгенерирован!!",
+    "username_generated_plural": "Никнеймы сгенерированы!",
+  
+    "command_usersettings": "настройки",
+  
+    "command_usersettings_set": "настроить",
+    "command_usersettings_set_desc": "Задает новое значение заданной настройке.",
+    "command_usersettings_set_setting": "настройка",
+    "command_usersettings_set_setting_desc": "Настройка для изменения.",
+    "command_usersettings_set_value": "значение",
+    "command_usersettings_set_value_desc": "Новое значение настройки.",
+  
+    "usersettings_boolean_check_fail": "Эта настройка - логическое значение, оно может быть только правдой или ложью!",
+    "usersettings_type_fail": "Невозможно определить правильный ввод! Сообщите об этой ошибке.",
+    "usersettings_success": "Настройка успешно изменена!",
+    "usersettings_success_details": "%1% изменено на %2%.",
+  
+    "command_usersettings_get": "получить",
+    "command_usersettings_get_desc": "Выдает текущее значение настройки.",
+    "command_usersettings_get_setting": "настройка",
+    "command_usersettings_get_setting_desc": "Настройка к получению.",
+  
+    "usersettings_value_details": "%1% изменено на %2%.",
+    "usersettings_value": "значение %1%",
+  
+    "command_usersettings_clear": "очистить",
+    "command_usersettings_clear_desc": "Задаёт всем настройкам значение по умолчанию.",
+  
+    "usersettings_confirm_clear": "Для потверждения возврата всех настроек к значению по умолчанию, введите команду ещё раз.",
+    "usersettings_confirm_clear_title": "подтверждение очищения настроек",
+    "usersettings_cleared": "Настройки успешно заданы к значению по умолчанию.",
+    "usersettings_cleared_title": "настройки очищены",
+  
+    "command_wiki": "вики",
+  
+    "command_wiki_create": "создать",
+    "command_wiki_create_desc": "Создает новую страницу.",
+  
+    "command_wiki_edit": "изменить",
+    "command_wiki_edit_desc": "Изменяет существующую страницу.",
+  
+    "command_wiki_read": "читать",
+    "command_wiki_read_desc": "Выдает страницу для чтения.",
+    "command_wiki_read_page": "страница",
+    "command_wiki_read_page_desc": "Страница для чтения.",
+  
+    "command_wiki_lock": "закрыть",
+    "command_wiki_lock_desc": "Запрещает изменение страницы. Вы должны обладать правами на Управление сообщениями.",
+    "command_wiki_lock_page": "страница",
+    "command_wiki_lock_page_desc": "Страница к закрытию.",
+  
+    "command_wiki_delete": "удалить",
+    "command_wiki_delete_desc": "Удаляет страницу. Вы должны обладать правами на Управление сообщениями.",
+    "command_wiki_delete_page": "страница",
+    "command_wiki_delete_page_desc": "Страница к удалению.",
+  
+    "command_wiki_unlock": "открыть",
+    "command_wiki_unlock_desc": "Разрешает изменение страницы. Вы должны обладать правами на Управление сообщениями.",
+    "command_wiki_unlock_page": "страница",
+    "command_wiki_unlock_page_desc": "СТраница к открытию.",
+  
+    "wiki_creation_title": "создание/изменение страницы",
+  
+    "wiki_title_label": "Введите название страницы ниже.",
+    "wiki_title_placeholder": "Название страницы.",
+  
+    "wiki_content_label": "Напишите саму страницу ниже.",
+    "wiki_content_placeholder": "Содержание страницы.",
+  
+    "wiki_locked_message": "Эта страница закрыта!",
+    "wiki_edited_message": "(от %3%) Страница %1% изменена! Новое содержание:\n```ansi\n%2%```",
+  
+    "wiki_note_not_found": "Страница не найдена.",
+  
+    "command_wikipedia": "википедия",
+    "command_wikipedia_desc": "Получите введение и ссылку к статье на Википедии на английском.",
+    "command_wikipedia_query": "задать",
+    "command_wikipedia_query_desc": "Изображение к поиску.",
+  
+    "wikipedia_message": "## [Ссылка на страницу](%1%)\n\n%2%"
+  }

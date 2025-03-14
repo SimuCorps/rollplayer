@@ -1,0 +1,9 @@
+data/*.pickle
+data/*.txt
+data/guilds/*
+data/wikis/*
+data/users/*
+cfg/prod.py
+cfg/test.py
+__pycache__/
+environment_details.py
