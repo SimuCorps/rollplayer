@@ -1,4 +1,4 @@
-from environment_details import ENVIRONMENT
+from environment import ENVIRONMENT
 
 if ENVIRONMENT == 'prod':
     from .prod import *
