@@ -56,6 +56,7 @@ condition_operator: ">"  -> c_gt
                   | "<=" -> c_lte
                   | "="  -> c_equ
                   | "==" -> c_equ
+                  | "!=" -> c_neq
 
 operator: "+" -> t_add
         | "-" -> t_sub

@@ -84,6 +84,7 @@ class ConditionType(StrEnum):
     LESS_THAN = "c_lt"
     LESS_THAN_OR_EQUAL = "c_lte"
     EQUAL = "c_equ"
+    NOT_EQUAL = "c_neq"
     BETWEEN = "c_bet"
     MAXIMUM = "c_max" # Not in the parser, but this is used for explodes w/o a condition
     
