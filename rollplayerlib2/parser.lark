@@ -1,0 +1,96 @@
+start: sum+
+
+?sum: product
+    | sum "+" product   -> add
+    | sum "-" product   -> sub
+
+?product: atom
+    | product "*" atom  -> mul
+    | product "/" atom  -> div
+
+?atom: NUMBER           -> number
+     | "-" atom         -> neg
+     | dice
+     | "(" sum ")"
+
+?number: NUMBER
+       | "-" NUMBER
+
+range: range_simple
+     | range_between
+     | range_shorthands
+
+range_shorthands: "%" -> range_percent
+
+range_simple: SIGNED_INT
+
+range_between: SIGNED_INT ".." SIGNED_INT
+             | SIGNED_INT ":"  SIGNED_INT
+
+dice: NUMBER? "d" range modifiers
+
+modifiers: _modifier*
+
+_modifier: targeted_bonuses|keep_higher|keep_lower|explode|reroll_condition|_drops
+
+_drops: conditional_drop
+
+conditional_drop: ("D"|"dr"i|"drop"i) condition_list
+
+reroll_condition: ("R"|"rr"i) condition_list [":" INT]
+
+pure_condition_list: "{" condition ["," condition]* "}"
+
+condition_list: "{" (condition|NUMBER) ["," (condition|NUMBER)]* "}"
+
+number_list: "{" NUMBER ["," NUMBER]* "}"
+
+condition: condition_operator NUMBER 
+         | NUMBER c_bet NUMBER
+
+c_bet: ".." | ":"
+
+condition_operator: ">"  -> c_gt
+                  | ">=" -> c_gte
+                  | "<"  -> c_lt
+                  | "<=" -> c_lte
+                  | "="  -> c_equ
+                  | "==" -> c_equ
+
+operator: "+" -> t_add
+        | "-" -> t_sub
+        | "/" -> t_div
+        | "*" -> t_mul
+
+targeted_operation: ":" operator number
+
+targeted_list: INT ("," INT)*
+             | "*"
+
+targeted_bonuses: "i"i targeted_list targeted_operation+
+
+keep_higher: "kh"i INT?
+keep_lower:  "kl"i INT?
+explode:     explosion_type condition_list? [":" INT?]
+
+explosion_type: "!" -> exp_infinite | "!!" -> exp_reductive
+
+%import common.LETTER
+%import common.WS_INLINE
+
+%ignore WS_INLINE
+
+// from common.lark
+
+DIGIT: "0".."9"
+HEXDIGIT: "a".."f"|"A".."F"|DIGIT
+
+INT.2: DIGIT+
+SIGNED_INT: ["+"|"-"] INT
+DECIMAL: INT "." INT+ | "." INT
+
+_EXP: ("e"|"E") SIGNED_INT
+FLOAT: INT _EXP | DECIMAL _EXP?
+SIGNED_FLOAT: ["+"|"-"] FLOAT
+
+NUMBER: FLOAT | INT
