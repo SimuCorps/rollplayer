@@ -210,7 +210,7 @@ class RerollLimitTransformer(Transformer):
     
     def reroll_condition(self, tree_list):
         cond_list = tree_list[0]
-        limit = self.limit
+        limit = 1
         if len(tree_list) == 2:
             limit = self.limit_check(int(tree_list[1].value))
         return Reroll(cond_list, limit)
@@ -233,7 +233,7 @@ async def transformer_default(string):
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
     tree = await loop.run_in_executor(None, ExplodeLimitTransformer(25, True).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
+    tree = await loop.run_in_executor(None, RerollLimitTransformer(10, True).transform, tree)
     return tree
 
 async def transformer_gm(string):
@@ -244,7 +244,7 @@ async def transformer_gm(string):
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
     tree = await loop.run_in_executor(None, ExplodeLimitTransformer(50, True).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(15, True).transform, tree)
+    tree = await loop.run_in_executor(None, RerollLimitTransformer(30, True).transform, tree)
     return tree
 
 async def transformer_nongm(string):
@@ -255,7 +255,7 @@ async def transformer_nongm(string):
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
     tree = await loop.run_in_executor(None, ExplodeLimitTransformer(25, False).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
+    tree = await loop.run_in_executor(None, RerollLimitTransformer(10, False).transform, tree)
     return tree
 
 async def __module_run():
