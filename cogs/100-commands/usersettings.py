@@ -58,7 +58,7 @@ class UserSettingsCog(commands.GroupCog, group_name="command_usersettings"):
         if settings["Global: Compact mode"]:
             await interaction.response.send_message(message, ephemeral=True)
         else:
-            await interaction.response.send_message(embed=embed_template(interaction, self.translator.translate("usersettings_success", interaction), message), ephemeral=True)
+            await interaction.response.send_message(embed=embed_template(interaction, self.translator.translate_from_interaction("usersettings_success", interaction), message), ephemeral=True)
 
     @app_commands.command(name="command_usersettings_get", description="command_usersettings_get")
     @app_commands.rename(setting="command_usersettings_get_setting")
@@ -76,7 +76,7 @@ class UserSettingsCog(commands.GroupCog, group_name="command_usersettings"):
         if settings["Global: Compact mode"]:
             await interaction.response.send_message(message, ephemeral=True)
         else:
-            await interaction.response.send_message(embed=embed_template(interaction, self.translator.translate("usersettings_value", interaction, [setting_val]), message), ephemeral=True)
+            await interaction.response.send_message(embed=embed_template(interaction, self.translator.translate_from_interaction("usersettings_value", interaction, [setting_val]), message), ephemeral=True)
 
 
     @app_commands.command(name="command_usersettings_clear", description="command_usersettings_clear")
