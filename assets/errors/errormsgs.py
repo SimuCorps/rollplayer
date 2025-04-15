@@ -16,7 +16,7 @@ messages = [
     "THREAD: 4 (BROKEN BOT EXCEPTION)",
     "Why not take a break? You can pause your session by leaving the room.",
     "0000000F\n00000003",
-    "Oooooops! You forgot to put the rolling syntax in your Perihelion",
+    "Oooooops! You forgot to put the rolling syntax in your Rollplayer.",
     "I'm so sorry for all this.",
     ":(",
     "Me sad.",
