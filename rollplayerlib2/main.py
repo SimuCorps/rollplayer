@@ -3,7 +3,9 @@ import itertools
 import random   
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum
-from parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
+
+import rollplayerlib2.stopit as stopit
+from rollplayerlib2.parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
 from heapq import nsmallest, nlargest
 from collections import Counter, deque
 
@@ -95,8 +97,11 @@ class TargetedBonus:
         if 0 in self.targets:
             raise LimitException("You can't add a bonus to a 0th dice!")
         for operation in self.operations:
-            for target in self.targets:
-                roll.results[target-1] = operation.apply(roll.results[target-1])
+            try:
+                for target in self.targets:
+                    roll.results[target-1] = operation.apply(roll.results[target-1])
+            except IndexError as e:
+                raise LimitException("You can't add a bonus to a non-existant dice! [You may have gone too far due to auto]")
 
 class KeepType(Enum):
     HIGHER = 1
@@ -276,6 +281,16 @@ class RollResult:
             self.results[index] = -result
         return self
     
+    def __str__(self):
+        if len(self.results) > 1:
+            return f"{", ".join([str(x) for x in self.results])} (total: {self.total_value})"
+        return str(self.results[0])
+    
+    def str_originalresults(self):
+        if len(self.results_original) > 1:
+            return f"{", ".join([str(x) for x in self.results_original])} (total: {sum(self.results_original)})"
+        return str(self.results_original[0])
+    
 @dataclass
 class Roll():
     quantity: int
@@ -325,8 +340,16 @@ class Roll():
     def process_keeps(self):
         if not self.modifiers.keep_higher and not self.modifiers.keep_lower:
             return
-        higher = self.modifiers.keep_higher.quantity
-        lower = self.modifiers.keep_lower.quantity
+        try:
+            higher = self.modifiers.keep_higher.quantity 
+        except AttributeError:
+            higher = 0
+        try:
+            lower = self.modifiers.keep_lower.quantity
+        except AttributeError:
+            lower = 0
+        if higher == 0 and lower == 0:
+            raise LimitException("You can't keep nothing!")
         low = nsmallest(lower, self.results) if lower > 0 else []
         high = nlargest(higher, self.results) if higher > 0 else []
         counts = Counter(low + high)
@@ -567,44 +590,62 @@ class MathTransformer(Transformer):
 
 parser = Lark_StandAlone()
 
-async def transformer_default(string):
+async def transformer_default(string) -> RollResult | int | float:
     """Transformer that acts like it has Rollplayer Gamemaster without actually having it [used as a stopgap until we have proper payment set up]
     """
     loop = asyncio.get_running_loop()
     
-    tree = parser.parse(string)
-    tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
-    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, True).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
-    tree = await loop.run_in_executor(None, DiceRollTransformer(1000, True).transform, tree)
-    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
-    return tree
+    with stopit.ThreadingTimeout(2) as to_ctx_mgr:
+        assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
+        tree = parser.parse(string)
+        tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
+        tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, True).transform, tree)
+        tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
+        tree = await loop.run_in_executor(None, DiceRollTransformer(1000, True).transform, tree)
+        tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
+    
+    if to_ctx_mgr:
+        return tree
+    else:
+        raise LimitException("The roll timed out (2s).")
 
-async def transformer_gm(string):
+async def transformer_gm(string) -> RollResult | int | float:
     """Transformer for Rollplayer Gamemaster members.
     """
     loop = asyncio.get_running_loop()
     
-    tree = parser.parse(string)
-    tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
-    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(50, True).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(30, True).transform, tree)
-    tree = await loop.run_in_executor(None, DiceRollTransformer(10000, True).transform, tree)
-    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
-    return tree
+    with stopit.ThreadingTimeout(4) as to_ctx_mgr:
+        assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
+        tree = parser.parse(string)
+        tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
+        tree = await loop.run_in_executor(None, ExplodeLimitTransformer(50, True).transform, tree)
+        tree = await loop.run_in_executor(None, RerollLimitTransformer(30, True).transform, tree)
+        tree = await loop.run_in_executor(None, DiceRollTransformer(10000, True).transform, tree)
+        tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
+    
+    if to_ctx_mgr:
+        return tree
+    else:
+        raise LimitException("The roll timed out (4s).")
 
-async def transformer_nongm(string):
+async def transformer_nongm(string) -> RollResult | int | float:
     """Transformer for non-members.
     """
     loop = asyncio.get_running_loop()
     
+    with stopit.ThreadingTimeout(2) as to_ctx_mgr:
+        assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
     tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, False).transform, tree)
     tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
     tree = await loop.run_in_executor(None, DiceRollTransformer(1000, False).transform, tree)
     tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
-    return tree
+    
+    if to_ctx_mgr:
+        return tree
+    else:
+        raise RollplayerGamemasterUpsellException("The roll timed out (2s). You can extend the timeout window with Rollplayer Gamemaster.")
 
 async def __module_run():
     import traceback
@@ -614,9 +655,9 @@ async def __module_run():
         if mode == "t":
             start = time.process_time()
             for x in range(1000):
-                tree = await transformer_default("10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5dr{150:200}")
+                tree = await transformer_default("10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5")
             end = time.process_time() - start
-            print("process time [rollplayerlib2] [1,000 rolls of <10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5dr{150:200}>]")
+            print("process time [rollplayerlib2] [1,000 rolls of <10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5>]")
             print(f"{end:3f}s ({end/1000:6f}s/roll)")
             from rollplayerlib import UnifiedDice, SolveMode
             solvemode = SolveMode.RANDOM
