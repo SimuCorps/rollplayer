@@ -74,7 +74,8 @@ keep_higher: "kh"i INT?
 keep_lower:  "kl"i INT?
 explode:     explosion_type condition_list? [":" INT?]
 
-explosion_type: "!" -> exp_infinite | "!!" -> exp_reductive
+explosion_type: "!" -> exp_infinite 
+            //| "!!" -> exp_reductive
 
 %import common.LETTER
 %import common.WS_INLINE

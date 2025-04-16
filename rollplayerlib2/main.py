@@ -1,7 +1,11 @@
 import asyncio
+import itertools
+import random   
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum
 from parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
+from heapq import nsmallest, nlargest
+from collections import Counter, deque
 
 def to_number(string):
     try: 
@@ -63,18 +67,43 @@ class TargetedOperation:
                 return "*"
             case _:
                 return "?"
+        
+    def apply(self, roll_value: int|float) -> int|float:
+        """Applies the bonus to the roll_value.
+        Args:
+            roll_value (int | float): The value of the roll to apply the operation to.
+        Returns:
+            int | float: The value after being applied.
+        """
+        match self.operator:
+            case Operator.ADD:
+                return roll_value + self.value
+            case Operator.SUB:
+                return roll_value - self.value
+            case Operator.DIV:
+                return roll_value / self.value
+            case Operator.MUL:
+                return roll_value * self.value
     
 @dataclass
-class TargetedBonuses:
+class TargetedBonus:
     targets: list[int] | None
     operations: list[TargetedOperation]
+    
+    def apply(self, roll: 'Roll'):
+        if self.targets == None: self.targets = range(1,len(roll.results)+1)
+        if 0 in self.targets:
+            raise LimitException("You can't add a bonus to a 0th dice!")
+        for operation in self.operations:
+            for target in self.targets:
+                roll.results[target-1] = operation.apply(roll.results[target-1])
 
 class KeepType(Enum):
     HIGHER = 1
     LOWER = 2
 
 @dataclass
-class Keeps():
+class Keep():
     keep_type: KeepType
     quantity: int
     
@@ -94,13 +123,78 @@ class Condition:
     threshold: int | float
     threshold2: int | float | None = None
     
+    def condition_match(self, roll: 'Roll'):
+        """Using the Condition, returns a list of indexes of the `Roll.results` list that matches the condition.
+
+        Args:
+            roll (Roll): The roll to check against.
+
+        Returns:
+            list[int]: The list of indexes of the `Roll.results` list.
+        """
+        match self.condition_type:
+            case ConditionType.GREATER_THAN:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result > self.threshold
+                ]
+
+            case ConditionType.GREATER_THAN_OR_EQUAL:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result >= self.threshold
+                ]
+
+            case ConditionType.LESS_THAN:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result < self.threshold
+                ]
+
+            case ConditionType.LESS_THAN_OR_EQUAL:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result <= self.threshold
+                ]
+
+            case ConditionType.EQUAL:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result == self.threshold
+                ]
+
+            case ConditionType.NOT_EQUAL:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result != self.threshold
+                ]
+
+            case ConditionType.BETWEEN:
+                if self.threshold2 is None:
+                    raise ValueError("threshold2 must be set for BETWEEN condition")
+                low, high = sorted((self.threshold, self.threshold2))
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if low <= result <= high
+                ]
+
+            case ConditionType.MAXIMUM:
+                return [
+                    i for i, result in enumerate(roll.results)
+                    if result == roll.range.high
+                ]
+                
+            case _:
+                raise ValueError(f"Condition type {self.condition_type} not implemented")
+        
+    
 class ExplosionType(StrEnum):
     INFINITE = "exp_infinite"
     REDUCTIVE = "exp_reductive"
     
 @dataclass
 class Explosion():
-    explosion_type: int
+    explosion_type: ExplosionType
     conditions: list[Condition]
     limit: int
     
@@ -112,6 +206,197 @@ class Reroll():
 @dataclass
 class ConditionalDrop():
     conditions: list[Condition]
+    
+@dataclass
+class Modifiers():
+    targeted_bonuses: list[TargetedBonus]
+    keep_lower: Keep | None
+    keep_higher: Keep | None
+    explosion: Explosion | None
+    rerolls: list[Reroll]
+    drops: list[ConditionalDrop]
+
+@dataclass
+class RollResult:
+    results: list[int|float]
+    results_original: list[int]
+    
+    @property
+    def total_value(self):
+        return sum(self.results)
+    
+    def __add__(self, other):
+        if isinstance(other, RollResult):
+            return self.total_value + other.total_value
+        if isinstance(other, (int, float)):
+            return self.total_value + other
+        return NotImplemented
+    
+    __radd__ = __add__
+    
+    def __sub__(self, other):
+        if isinstance(other, RollResult):
+            return self.total_value - other.total_value
+        if isinstance(other, (int, float)):
+            return self.total_value - other
+        return NotImplemented
+    
+    def __rsub__(self, other):
+        if isinstance(other, RollResult):
+            return other.total_value - self.total_value
+        if isinstance(other, (int, float)):
+            return other - self.total_value
+        return NotImplemented
+    
+    def __mul__(self, other):
+        if isinstance(other, RollResult):
+            return self.total_value * other.total_value
+        if isinstance(other, (int, float)):
+            return self.total_value * other
+        return NotImplemented
+    
+    __rmul__ = __mul__
+    
+    def __truediv__(self, other):
+        if isinstance(other, RollResult):
+            return self.total_value / other.total_value
+        if isinstance(other, (int, float)):
+            return self.total_value / other
+        return NotImplemented
+    
+    def __truediv__(self, other):
+        if isinstance(other, RollResult):
+            return other.total_value / self.total_value
+        if isinstance(other, (int, float)):
+            return other / self.total_value
+        return NotImplemented
+    
+    def __neg__(self):
+        for index, result in enumerate(self.results):
+            self.results[index] = -result
+        return self
+    
+@dataclass
+class Roll():
+    quantity: int
+    range: Range
+    modifiers: Modifiers
+    results: list[int|float] | None = None
+    results_original: list[int] | None = None
+    
+    def _roll_die(self) -> int:
+        return random.randint(self.range.low, self.range.high)
+    
+    def _check_value_meets_explosion_conditions(self, value_to_check: int | float) -> bool:
+        """
+        Helper function for clarity within process_explosion.
+        """
+        if not self.modifiers.explosion or not self.modifiers.explosion.conditions:
+            return False
+
+        explosion_cfg = self.modifiers.explosion
+
+        for condition in explosion_cfg.conditions:
+            condition_met = False
+            match condition.condition_type:
+                case ConditionType.GREATER_THAN:
+                    condition_met = (value_to_check > condition.threshold)
+                case ConditionType.GREATER_THAN_OR_EQUAL:
+                    condition_met = (value_to_check >= condition.threshold)
+                case ConditionType.LESS_THAN:
+                    condition_met = (value_to_check < condition.threshold)
+                case ConditionType.LESS_THAN_OR_EQUAL:
+                    condition_met = (value_to_check <= condition.threshold)
+                case ConditionType.EQUAL:
+                    condition_met = (value_to_check == condition.threshold)
+                case ConditionType.NOT_EQUAL:
+                    condition_met = (value_to_check != condition.threshold)
+                case ConditionType.BETWEEN:
+                    if condition.threshold2 is not None:
+                        low = min(condition.threshold, condition.threshold2)
+                        high = max(condition.threshold, condition.threshold2)
+                        condition_met = (low <= value_to_check <= high)
+                case ConditionType.MAXIMUM:
+                    condition_met = (value_to_check == self.range.high)
+                case _: pass
+
+        return condition_met
+    
+    def process_keeps(self):
+        if not self.modifiers.keep_higher and not self.modifiers.keep_lower:
+            return
+        higher = self.modifiers.keep_higher.quantity
+        lower = self.modifiers.keep_lower.quantity
+        low = nsmallest(lower, self.results) if lower > 0 else []
+        high = nlargest(higher, self.results) if higher > 0 else []
+        counts = Counter(low + high)
+
+        result = []
+        for x in self.results:
+            if counts[x] > 0:
+                result.append(x)
+                counts[x] -= 1
+        self.results = result
+        
+    def process_drops(self):
+        to_drop = set()
+        for drop in self.modifiers.drops:
+            for condition in drop.conditions:
+                to_drop |= set(condition.condition_match(self))
+
+        std = sorted(to_drop, reverse=True)
+        for idx in std:
+            del self.results[idx]
+        
+    def process_rerolls(self):
+        for rr in self.modifiers.rerolls:
+            for attempt in range(rr.limit):
+                to_reroll = set()
+                for condition in rr.conditions:
+                    to_reroll |= set(condition.condition_match(self))
+                if len(to_reroll) == 0: break
+                for reroll in to_reroll:
+                    self.results[reroll] = random.randint(self.range.low, self.range.high)
+                    
+    def process_explosion(self):
+        if not self.modifiers.explosion or \
+           not self.results or \
+           self.modifiers.explosion.limit <= 0 or \
+           not self.modifiers.explosion.conditions:
+            return
+
+        explosion_cfg = self.modifiers.explosion
+        initial_quantity = len(self.results)
+
+        explosion_counts = [0] * initial_quantity
+        for i in range(initial_quantity):
+            current_value_to_check = self.results[i]
+
+            while True: 
+                triggers_explosion = self._check_value_meets_explosion_conditions(current_value_to_check)
+                if not triggers_explosion or explosion_counts[i] >= explosion_cfg.limit:
+                    break
+                
+                explosion_counts[i] += 1
+                new_roll_value = self._roll_die()
+                self.results[i] += new_roll_value
+                current_value_to_check = new_roll_value
+
+    def process_targeted_bonuses(self):
+        for t_bonus in self.modifiers.targeted_bonuses:
+            t_bonus.apply(self)
+                
+    def process(self):
+        results = []
+        for idx in range(self.quantity):
+            results.append(random.randint(self.range.low, self.range.high))
+        self.results = results
+        self.results_original = results.copy()
+        self.process_keeps()
+        self.process_drops()
+        self.process_rerolls()
+        self.process_explosion()
+        self.process_targeted_bonuses()
     
 class RollplayerLibTransformer(Transformer):
     def range(self, tree_list):
@@ -133,18 +418,18 @@ class RollplayerLibTransformer(Transformer):
     def targeted_bonuses(self, tree_list):
         ops = tree_list[1:]
         if not tree_list[0].children: # wildcard
-            return TargetedBonuses(None, ops)
-        return TargetedBonuses([int(number) for number in tree_list[0].children], ops)
+            return TargetedBonus(None, ops)
+        return TargetedBonus([int(number) for number in tree_list[0].children], ops)
     
     def keep_higher(self, tree_list):
         if not tree_list:
-            return Keeps(KeepType.HIGHER, 1)
-        return Keeps(KeepType.HIGHER, int(tree_list[0].value))
+            return Keep(KeepType.HIGHER, 1)
+        return Keep(KeepType.HIGHER, int(tree_list[0].value))
     
     def keep_lower(self, tree_list):
         if not tree_list:
-            return Keeps(KeepType.LOWER, 1)
-        return Keeps(KeepType.LOWER, int(tree_list[0].value))
+            return Keep(KeepType.LOWER, 1)
+        return Keep(KeepType.LOWER, int(tree_list[0].value))
     
     def condition(self, tree_list):
         if type(tree_list[1]) == Tree:
@@ -162,9 +447,6 @@ class RollplayerLibTransformer(Transformer):
     
     def conditional_drop(self, tree_list):
         return ConditionalDrop(tree_list[0])
-    
-    #def dice(self, tree_list):
-    #    print(tree_list)
 
 class ExplodeLimitTransformer(Transformer):
     def __init__(self, limit: int, gamemaster: bool, visit_tokens: bool = True):
@@ -220,8 +502,68 @@ class DiceRollTransformer(Transformer):
         super().__init__(visit_tokens)
         self.dice_count_limit = dice_count_limit
         self.gamemaster = gamemaster
-        
-    def modifiers(self): pass
+    
+    def check_qty(self, limit):
+        if limit == 0:
+            raise LimitException("You can't roll zero dice!")
+        if limit <= self.dice_count_limit:
+            return limit
+        if not self.gamemaster:
+            raise RollplayerGamemasterUpsellException(f"You can't increase the dice quantity past {self.dice_count_limit} without Rollplayer Gamemaster.")
+        raise LimitException(f"The quantity limit of {self.dice_count_limit} was reached.")
+    
+    def modifiers(self, tree_list): 
+        targeted_bonuses = []
+        keep_higher = None
+        keep_lower = None
+        explosion = None
+        rerolls = []
+        drops = []
+        for value in tree_list:
+            if type(value) == TargetedBonus:
+                targeted_bonuses.append(value)
+                continue
+            if type(value) == Keep:
+                if value.keep_type == KeepType.HIGHER:
+                    if keep_higher:
+                        raise LimitException("You can't have multiple keep highers in the same roll!")
+                    keep_higher = value
+                else:
+                    if keep_lower:
+                        raise LimitException("You can't have multiple keep lowers in the same roll!")
+                    keep_lower = value
+                continue
+            if type(value) == Explosion:
+                if explosion:
+                    raise LimitException("You can't have multiple explosions in the same roll!")
+                explosion = value
+                continue
+            if type(value) == Reroll:
+                rerolls.append(value)
+                continue
+            if type(value) == ConditionalDrop:
+                drops.append(value)
+                continue
+        return Modifiers(targeted_bonuses, keep_lower, keep_higher, explosion, rerolls, drops)
+    
+    def dice(self, tree_list):
+        qty = 1
+        if type(tree_list[0]) == Token:
+            qty = self.check_qty(int(tree_list[0].value))
+            tree_list = tree_list[1:]
+        roll = Roll(qty, tree_list[0], tree_list[1])
+        roll.process()
+        return RollResult(roll.results, roll.results_original)
+            
+
+@v_args(inline=True)    # Affects the signatures of the methods
+class MathTransformer(Transformer):
+    number = to_number
+    from operator import add, sub, mul, truediv as div, neg
+    
+    def start(self, ret):
+        return ret
+
 
 parser = Lark_StandAlone()
 
@@ -232,8 +574,10 @@ async def transformer_default(string):
     
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
-    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(25, True).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(10, True).transform, tree)
+    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, True).transform, tree)
+    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
+    tree = await loop.run_in_executor(None, DiceRollTransformer(1000, True).transform, tree)
+    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
     return tree
 
 async def transformer_gm(string):
@@ -245,6 +589,8 @@ async def transformer_gm(string):
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
     tree = await loop.run_in_executor(None, ExplodeLimitTransformer(50, True).transform, tree)
     tree = await loop.run_in_executor(None, RerollLimitTransformer(30, True).transform, tree)
+    tree = await loop.run_in_executor(None, DiceRollTransformer(10000, True).transform, tree)
+    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
     return tree
 
 async def transformer_nongm(string):
@@ -254,15 +600,39 @@ async def transformer_nongm(string):
     
     tree = parser.parse(string)
     tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
-    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(25, False).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(10, False).transform, tree)
+    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, False).transform, tree)
+    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
+    tree = await loop.run_in_executor(None, DiceRollTransformer(1000, False).transform, tree)
+    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
     return tree
 
 async def __module_run():
     import traceback
+    import time
     try:
-        tree = await transformer_default("10d100..200i*:+20:+20i1,2:+20kh2kl!{1,>=90}:20rr{<=20}:5dr{50:54}")
-        print(tree.pretty())
+        mode = input("What mode you want? t for test, r for run: ")
+        if mode == "t":
+            start = time.process_time()
+            for x in range(1000):
+                tree = await transformer_default("10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5dr{150:200}")
+            end = time.process_time() - start
+            print("process time [rollplayerlib2] [1,000 rolls of <10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5dr{150:200}>]")
+            print(f"{end:3f}s ({end/1000:6f}s/roll)")
+            from rollplayerlib import UnifiedDice, SolveMode
+            solvemode = SolveMode.RANDOM
+            start2 = time.process_time()
+            UnifiedDice.new("10d100:200+20+20i1,2:+20").solve(solvemode)
+            end2 = time.process_time() - start2
+            print("process time [rollplayerlib1] [1,000 rolls of <10d100..200>]")
+            print(f"{end2:3f}s ({end2/1000:6f}s/roll)")
+        elif mode == "r":
+            mode2 = input("run [p]re-defined test or [i]nput your own?: ")
+            if mode2 == "p":
+                tree = await transformer_default("10d100..200i*:+20:+20i1,2:+20kh4kl4!{>=170}:5rr{<=130}:5dr{150:200}")
+            elif mode2 == "i":
+                string = input("type a roll: ")
+                tree = await transformer_default(string)
+            print(tree)
     except LexError as e:
         traceback.print_exc()
     except VisitError as e:
