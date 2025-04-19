@@ -47,7 +47,8 @@ class RollCog(commands.Cog):
                 await interaction.response.send_message(embed=embed)
                 return
             raise e
-
+        rolls = result[0]
+        
         try:
             if settings["Global: Compact mode"]:
                 message = f"**{rolls}** | {str(result)}\n"
@@ -58,6 +59,7 @@ class RollCog(commands.Cog):
                 return
             else:
                 embed = embed_template(interaction, f"--- {rolls} ---")
+                embed.color = result[1]
                 if len(str(result)) > 1024: raise RollException()
                 embed.add_field(name=f"{rolls}", value=str(result), inline=False)
                 if type(result) == RollResult and result.results != result.results_original:

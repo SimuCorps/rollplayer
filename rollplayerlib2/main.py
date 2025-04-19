@@ -1,11 +1,18 @@
 import asyncio
+import colorsys
 import itertools
 import random   
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum
 
-import rollplayerlib2.stopit as stopit
-from rollplayerlib2.parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
+import discord
+
+try:
+    from stopit import ThreadingTimeout
+    from parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
+except ImportError:
+    from rollplayerlib2.stopit import ThreadingTimeout
+    from rollplayerlib2.parser import Lark_StandAlone, LexError, Token, Transformer, Tree, VisitError, v_args
 from heapq import nsmallest, nlargest
 from collections import Counter, deque
 
@@ -16,6 +23,10 @@ def to_number(string):
         pass
     return float(string)
     
+class RollType(Enum):
+    RANDOM = 1
+    LOWEST = 2
+    HIGHEST = 3
 
 class RollplayerParsingException(Exception):
     """Base class for all Rollplayer library parsing exceptions.
@@ -269,7 +280,7 @@ class RollResult:
             return self.total_value / other
         return NotImplemented
     
-    def __truediv__(self, other):
+    def __rtruediv__(self, other):
         if isinstance(other, RollResult):
             return other.total_value / self.total_value
         if isinstance(other, (int, float)):
@@ -284,23 +295,34 @@ class RollResult:
     def __str__(self):
         if len(self.results) > 1:
             return f"{", ".join([str(x) for x in self.results])} (total: {self.total_value})"
-        return str(self.results[0])
+        if len(self.results) == 1:
+            return str(self.results[0])
+        return "(no rolls)"
     
     def str_originalresults(self):
         if len(self.results_original) > 1:
             return f"{", ".join([str(x) for x in self.results_original])} (total: {sum(self.results_original)})"
-        return str(self.results_original[0])
+        if len(self.results_original) == 1:
+            return str(self.results_original[0])
+        return "(no rolls)"
     
 @dataclass
 class Roll():
     quantity: int
     range: Range
     modifiers: Modifiers
+    roll_type: RollType = RollType.RANDOM
     results: list[int|float] | None = None
     results_original: list[int] | None = None
     
     def _roll_die(self) -> int:
-        return random.randint(self.range.low, self.range.high)
+        match self.roll_type:
+            case RollType.RANDOM:
+                return random.randint(self.range.low, self.range.high)
+            case RollType.LOWEST:
+                return self.range.low
+            case RollType.HIGHEST:
+                return self.range.high
     
     def _check_value_meets_explosion_conditions(self, value_to_check: int | float) -> bool:
         """
@@ -334,8 +356,9 @@ class Roll():
                 case ConditionType.MAXIMUM:
                     condition_met = (value_to_check == self.range.high)
                 case _: pass
+            if condition_met: return True
+        return False
 
-        return condition_met
     
     def process_keeps(self):
         if not self.modifiers.keep_higher and not self.modifiers.keep_lower:
@@ -379,7 +402,7 @@ class Roll():
                     to_reroll |= set(condition.condition_match(self))
                 if len(to_reroll) == 0: break
                 for reroll in to_reroll:
-                    self.results[reroll] = random.randint(self.range.low, self.range.high)
+                    self.results[reroll] = self._roll_die()
                     
     def process_explosion(self):
         if not self.modifiers.explosion or \
@@ -412,7 +435,7 @@ class Roll():
     def process(self):
         results = []
         for idx in range(self.quantity):
-            results.append(random.randint(self.range.low, self.range.high))
+            results.append(self._roll_die())
         self.results = results
         self.results_original = results.copy()
         self.process_keeps()
@@ -431,9 +454,6 @@ class RollplayerLibTransformer(Transformer):
             range = Range(1, int(tree_list[0].children[0].value))
         range.swap_if_needed()
         return range
-    
-    def number(self, tree_list):
-        return float(tree_list[0].value)  
     
     def targeted_operation(self, tree_list):
         return TargetedOperation(Operator(tree_list[0].data), to_number(tree_list[1].value))
@@ -521,10 +541,11 @@ class RerollLimitTransformer(Transformer):
         return Reroll(cond_list, limit)
 
 class DiceRollTransformer(Transformer):
-    def __init__(self, dice_count_limit: int, gamemaster: bool, visit_tokens: bool = True):
+    def __init__(self, dice_count_limit: int, gamemaster: bool, roll_type: RollType, visit_tokens: bool = True):
         super().__init__(visit_tokens)
         self.dice_count_limit = dice_count_limit
         self.gamemaster = gamemaster
+        self.roll_type = roll_type
     
     def check_qty(self, limit):
         if limit == 0:
@@ -574,57 +595,116 @@ class DiceRollTransformer(Transformer):
         if type(tree_list[0]) == Token:
             qty = self.check_qty(int(tree_list[0].value))
             tree_list = tree_list[1:]
-        roll = Roll(qty, tree_list[0], tree_list[1])
+        roll = Roll(qty, tree_list[0], tree_list[1], self.roll_type)
         roll.process()
         return RollResult(roll.results, roll.results_original)
             
 
 @v_args(inline=True)    # Affects the signatures of the methods
 class MathTransformer(Transformer):
-    number = to_number
     from operator import add, sub, mul, truediv as div, neg
     
-    def start(self, ret):
+    def number(self, number):
+        return to_number(number)
+    
+    def start(self, *ret):
         return ret
 
 
 parser = Lark_StandAlone()
 
-async def transformer_default(string) -> RollResult | int | float:
+
+def normalize(min_val, max_val, value):
+    if value < min_val:
+        return 0.0
+    elif value > max_val:
+        return 1.0
+    elif min_val == max_val:
+        return 0.5
+    else:
+        return (value - min_val) / (max_val - min_val)
+
+def color_hsv(value: float) -> discord.Color:
+    value = max(min(value, 1), 0)
+
+    hue = value * 120.0
+
+    saturation = 0.8
+    brightness = 0.8
+
+    if value == 1:
+        saturation = 1
+        brightness = 1
+        hue = 200
+    elif value == 0:
+        saturation = 0
+        brightness = 0
+        hue = 0
+
+    r, g, b = colorsys.hsv_to_rgb(hue / 360.0, saturation, brightness)
+    return discord.Color.from_rgb(int(r * 255), int(g * 255), int(b * 255))
+
+def get_color(trees: dict[RollType, RollResult]) -> tuple[tuple[RollResult|int|float], discord.Color]:
+    values = []
+    for zipped in zip(trees[1], trees[2], trees[3]):
+        roll, lowest, highest = zipped[0], zipped[1], zipped[2]
+        if isinstance(roll, (int, float)):
+            if lowest > highest:
+                lowest, highest = highest, lowest
+            values.append(normalize(lowest, highest, roll))
+        else:
+            if lowest.total_value > highest.total_value:
+                lowest, highest = highest, lowest
+            values.append(normalize(lowest.total_value,
+                                         highest.total_value,
+                                         roll.total_value))
+    if (length := len(values)) == 1:
+        return color_hsv(values[0])
+    else:
+        return color_hsv(sum(values)/length)
+    
+
+async def transformer_default(string) -> tuple[tuple[RollResult|int|float], discord.Color]:
     """Transformer that acts like it has Rollplayer Gamemaster without actually having it [used as a stopgap until we have proper payment set up]
     """
     loop = asyncio.get_running_loop()
     
-    with stopit.ThreadingTimeout(2) as to_ctx_mgr:
+    with ThreadingTimeout(2) as to_ctx_mgr:
         assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
         tree = parser.parse(string)
         tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
         tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, True).transform, tree)
         tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
-        tree = await loop.run_in_executor(None, DiceRollTransformer(1000, True).transform, tree)
-        tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
+        trees = {}
+        for rolltype in RollType:
+            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(1000, True, rolltype).transform, tree)
+            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            trees[rolltype.value] = tree_temp
     
     if to_ctx_mgr:
-        return tree
+        return trees[1], get_color(trees)
     else:
         raise LimitException("The roll timed out (2s).")
 
-async def transformer_gm(string) -> RollResult | int | float:
+async def transformer_gm(string) -> tuple[tuple[RollResult|int|float], discord.Color]:
     """Transformer for Rollplayer Gamemaster members.
     """
     loop = asyncio.get_running_loop()
     
-    with stopit.ThreadingTimeout(4) as to_ctx_mgr:
+    with ThreadingTimeout(4) as to_ctx_mgr:
         assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
         tree = parser.parse(string)
         tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
         tree = await loop.run_in_executor(None, ExplodeLimitTransformer(50, True).transform, tree)
         tree = await loop.run_in_executor(None, RerollLimitTransformer(30, True).transform, tree)
-        tree = await loop.run_in_executor(None, DiceRollTransformer(10000, True).transform, tree)
-        tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
-    
+        trees = {}
+        for rolltype in RollType:
+            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(10000, True, rolltype).transform, tree)
+            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            trees[rolltype.value] = tree_temp
+            
     if to_ctx_mgr:
-        return tree
+        return trees[1], get_color(trees)
     else:
         raise LimitException("The roll timed out (4s).")
 
@@ -633,17 +713,20 @@ async def transformer_nongm(string) -> RollResult | int | float:
     """
     loop = asyncio.get_running_loop()
     
-    with stopit.ThreadingTimeout(2) as to_ctx_mgr:
+    with ThreadingTimeout(2) as to_ctx_mgr:
         assert to_ctx_mgr.state == to_ctx_mgr.EXECUTING
-    tree = parser.parse(string)
-    tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
-    tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, False).transform, tree)
-    tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
-    tree = await loop.run_in_executor(None, DiceRollTransformer(1000, False).transform, tree)
-    tree = await loop.run_in_executor(None, MathTransformer().transform, tree)
-    
+        tree = parser.parse(string)
+        tree = await loop.run_in_executor(None, RollplayerLibTransformer().transform, tree)
+        tree = await loop.run_in_executor(None, ExplodeLimitTransformer(5, False).transform, tree)
+        tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
+        trees = {}
+        for rolltype in RollType:
+            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(1000, False, rolltype).transform, tree)
+            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            trees[rolltype.value] = tree_temp
+            
     if to_ctx_mgr:
-        return tree
+        return trees[1], get_color(trees)
     else:
         raise RollplayerGamemasterUpsellException("The roll timed out (2s). You can extend the timeout window with Rollplayer Gamemaster.")
 
@@ -673,6 +756,7 @@ async def __module_run():
             elif mode2 == "i":
                 string = input("type a roll: ")
                 tree = await transformer_default(string)
+            else: return
             print(tree)
     except LexError as e:
         traceback.print_exc()
