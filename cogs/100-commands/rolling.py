@@ -61,10 +61,10 @@ class RollCog(commands.Cog):
                     embed = embed_template(interaction, f"--- {rolls} ---")
                     embed.color = result[1]
                     if len(str(results[0])) > 1022: raise RollException()
-                    embed.add_field(name=f"#{i}:", value=f"[{results[0]}]", inline=False)
+                    embed.add_field(name=f"#{rolls}:", value=f"[{results[0]}]", inline=False)
                     if type(results[0]) == RollResult and results[0].results != results[0].results_original:
                         if len(results[0].str_originalresults()) > 1022: raise RollException()
-                        embed.add_field(name=f"(original) #{i}:", value=f"[{results[0].str_originalresults()}]", inline=False)
+                        embed.add_field(name=f"(original) #{rolls}:", value=f"[{results[0].str_originalresults()}]", inline=False)
                     await interaction.response.send_message(embed=embed)
             except RollException:
                 embed = error_template(interaction, self.translator.translate_from_interaction("roll_result_too_long", interaction))
