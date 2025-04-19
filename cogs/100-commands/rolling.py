@@ -45,7 +45,7 @@ class RollCog(commands.Cog):
             if type(e) == LimitException:
                 embed = error_template(interaction, str(e))
                 await interaction.response.send_message(embed=embed)
-                returnrolls
+                return
             raise e
         results = result[0]
         if len(results) == 1:
