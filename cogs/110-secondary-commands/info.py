@@ -30,8 +30,7 @@ class InfoCog(commands.Cog):
         embed = embed_template(interaction, f"{BOT_NAME} version {VERSION} info", """### Credits
  = Contributors =
 - @whirlingstars - i made most of the bot
-- @diginist - made /username, /distance, and a few other Cool Things
-- @legitsi - made the original rolling system, and /rngsim
+- @legitsi - made the original rolling system
 - @leepicqwerty - russian translations
 - @bambus80 - polish translations
 

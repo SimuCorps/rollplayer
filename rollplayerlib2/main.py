@@ -602,12 +602,25 @@ class DiceRollTransformer(Transformer):
 
 @v_args(inline=True)    # Affects the signatures of the methods
 class MathTransformer(Transformer):
+    def __init__(self, limit: int, gamemaster: bool, visit_tokens: bool = True):
+        super().__init__(visit_tokens)
+        self.limit = limit
+        self.gamemaster = gamemaster
+    
+    def limit_check(self, limit):
+        if limit <= self.limit:
+            return limit
+        if not self.gamemaster:
+            raise RollplayerGamemasterUpsellException(f"You can't increase the dice limit past {self.limit} without Rollplayer Gamemaster.")
+        raise LimitException(f"The dice limit of {self.limit} was reached.")
+    
     from operator import add, sub, mul, truediv as div, neg
     
     def number(self, number):
         return to_number(number)
     
     def start(self, *ret):
+        self.limit_check(len(ret))
         return ret
 
 
@@ -677,8 +690,8 @@ async def transformer_default(string) -> tuple[tuple[RollResult|int|float], disc
         tree = await loop.run_in_executor(None, RerollLimitTransformer(5, True).transform, tree)
         trees = {}
         for rolltype in RollType:
-            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(1000, True, rolltype).transform, tree)
-            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(100, True, rolltype).transform, tree)
+            tree_temp = await loop.run_in_executor(None, MathTransformer(5, True).transform, tree_temp)
             trees[rolltype.value] = tree_temp
     
     if to_ctx_mgr:
@@ -700,7 +713,7 @@ async def transformer_gm(string) -> tuple[tuple[RollResult|int|float], discord.C
         trees = {}
         for rolltype in RollType:
             tree_temp = await loop.run_in_executor(None, DiceRollTransformer(10000, True, rolltype).transform, tree)
-            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            tree_temp = await loop.run_in_executor(None, MathTransformer(10, True).transform, tree_temp)
             trees[rolltype.value] = tree_temp
             
     if to_ctx_mgr:
@@ -721,8 +734,8 @@ async def transformer_nongm(string) -> RollResult | int | float:
         tree = await loop.run_in_executor(None, RerollLimitTransformer(5, False).transform, tree)
         trees = {}
         for rolltype in RollType:
-            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(1000, False, rolltype).transform, tree)
-            tree_temp = await loop.run_in_executor(None, MathTransformer().transform, tree_temp)
+            tree_temp = await loop.run_in_executor(None, DiceRollTransformer(100, False, rolltype).transform, tree)
+            tree_temp = await loop.run_in_executor(None, MathTransformer(5, False).transform, tree_temp)
             trees[rolltype.value] = tree_temp
             
     if to_ctx_mgr:
